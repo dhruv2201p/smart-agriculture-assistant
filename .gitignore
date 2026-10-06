@@ -1,5 +1,7 @@
 # Environment variables & API keys
 .env
+backend/.env
+frontend/.env
 *.env
 
 # Python Virtual Environment
@@ -7,18 +9,23 @@
 venv/
 ENV/
 
-# Python byte-code and cache
+# Python byte-code & build artifacts
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyd
 
+# Frontend dependencies & build output
+frontend/node_modules/
+frontend/dist/
+
 # Large Datasets (Local storage - 32GB)
+ml/data/
 data/
 
-# Deep Learning weights exceeding GitHub's 100MB limit (Download separately)
+# Deep Learning weights exceeding GitHub's 100MB limit
 *.keras
-models/disease/*.keras
+backend/models/disease/*.keras
 
 # Jupyter Notebook checkpoints & training logs
 .ipynb_checkpoints/
