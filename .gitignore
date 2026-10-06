@@ -1,0 +1,33 @@
+# Environment variables & API keys
+.env
+*.env
+
+# Python Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python byte-code and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Large Datasets (Local storage - 32GB)
+data/
+
+# Deep Learning weights exceeding GitHub's 100MB limit (Download separately)
+*.keras
+models/disease/*.keras
+
+# Jupyter Notebook checkpoints & training logs
+.ipynb_checkpoints/
+catboost_info/
+
+# IDE & Operating System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
