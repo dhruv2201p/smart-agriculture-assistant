@@ -1,54 +1,330 @@
+/* ==========================================================================
+   Smart Agriculture Assistant - Global Design System & Variables
+   Theme: Clean Modern Agriculture (WCAG AA Compliant, Mobile-First)
+   ========================================================================== */
+
 :root {
-  --primary: #15803d;
-  --primary-hover: #166534;
-  --primary-light: #dcfce7;
-  --accent: #0284c7;
-  --bg: #f8fafc;
+  /* Color Palette - Vibrant Agriculture Greens */
+  --primary: #15803d;         /* Green 700 - high contrast against white */
+  --primary-hover: #166534;   /* Green 800 */
+  --primary-active: #14532d;  /* Green 900 */
+  --primary-subtle: #dcfce7;  /* Green 100 */
+  --primary-subtle-border: #86efac; /* Green 300 */
+  --primary-light: #f0fdf4;   /* Green 50 */
+  --primary-glow: rgba(21, 128, 61, 0.15);
+
+  /* Surface & Background */
+  --bg-app: #f8fafc;          /* Slate 50 */
   --surface: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --success: #10b981;
-  --radius: 12px;
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --surface-raised: #f1f5f9;   /* Slate 100 */
+  --surface-card: #ffffff;
+  --surface-hover: #f1f5f9;
+  --border-light: #e2e8f0;     /* Slate 200 */
+  --border-medium: #cbd5e1;    /* Slate 300 */
+
+  /* Text & Typography */
+  --text-main: #0f172a;       /* Slate 900 */
+  --text-secondary: #334155;  /* Slate 700 */
+  --text-muted: #64748b;      /* Slate 500 */
+  --text-white: #ffffff;
+
+  /* Semantic Feedback Colors */
+  --success: #15803d;
+  --success-bg: #dcfce7;
+  --success-border: #86efac;
+  --warning: #b45309;         /* Amber 700 */
+  --warning-bg: #fef3c7;
+  --warning-border: #fcd34d;
+  --danger: #b91c1c;          /* Red 700 */
+  --danger-bg: #fee2e2;
+  --danger-border: #fca5a5;
+
+  /* Font System */
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: clamp(0.72rem, 0.68rem + 0.2vw, 0.78rem);
+  --fs-sm: clamp(0.8125rem, 0.78rem + 0.15vw, 0.875rem);
+  --fs-base: clamp(0.9375rem, 0.9rem + 0.2vw, 1rem);
+  --fs-lg: clamp(1.05rem, 1rem + 0.3vw, 1.125rem);
+  --fs-xl: clamp(1.2rem, 1.1rem + 0.5vw, 1.35rem);
+  --fs-2xl: clamp(1.4rem, 1.25rem + 0.8vw, 1.75rem);
+  --fs-3xl: clamp(1.75rem, 1.5rem + 1.2vw, 2.25rem);
+
+  /* Elevation & Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+
+  /* Touch & Layout Targets */
+  --touch-target: 44px;
+  --bottom-nav-height: 64px;
+  --container-max-width: 1100px;
 }
 
-* {
+/* ==========================================================================
+   Dark Mode Support (prefers-color-scheme)
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app: #091310;
+    --surface: #10211a;
+    --surface-raised: #182e25;
+    --surface-card: #13271f;
+    --surface-hover: #1c362b;
+    --border-light: #203e31;
+    --border-medium: #2e5544;
+
+    --text-main: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+
+    --primary: #22c55e;
+    --primary-hover: #4ade80;
+    --primary-active: #16a34a;
+    --primary-subtle: rgba(34, 197, 94, 0.18);
+    --primary-subtle-border: rgba(34, 197, 94, 0.4);
+    --primary-light: #12281e;
+    --primary-glow: rgba(34, 197, 94, 0.25);
+
+    --success-bg: rgba(34, 197, 94, 0.15);
+    --warning-bg: rgba(217, 119, 6, 0.2);
+    --warning-border: rgba(245, 158, 11, 0.35);
+    --danger-bg: rgba(220, 38, 38, 0.2);
+    --danger-border: rgba(239, 68, 68, 0.35);
+
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 20px -3px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ==========================================================================
+   CSS Reset & Base Rules
+   ========================================================================== */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--bg);
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
   color: var(--text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Responsive Root Container */
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Consistent Centered Container */
+.app-container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Mobile-first: Add bottom padding so fixed navigation does not obscure content */
+@media (max-width: 767px) {
+  .app-container {
+    padding-bottom: calc(var(--bottom-nav-height) + 1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (min-width: 768px) {
+  .app-container {
+    padding: 1.5rem 1.5rem 2rem 1.5rem;
+  }
+}
+
+/* ==========================================================================
+   Interactive Controls & Minimum Touch Target
+   ========================================================================== */
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: var(--fs-base);
 }
 
 button {
-  font-family: inherit;
   cursor: pointer;
   border: none;
-  border-radius: var(--radius);
+  background: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* Accessible interactive elements */
+.btn-primary {
+  min-height: var(--touch-target);
+  padding: 0.75rem 1.25rem;
+  background: var(--primary);
+  color: var(--text-white);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px var(--primary-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--primary-glow);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--primary-active);
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  min-height: var(--touch-target);
+  padding: 0.6rem 1rem;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   transition: all 0.2s ease;
 }
 
-input, select, textarea {
-  font-family: inherit;
-  font-size: 0.95rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  outline: none;
-  transition: border-color 0.2s ease;
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-main);
+  border-color: var(--border-medium);
 }
 
-input:focus, select:focus, textarea:focus {
+/* Input Fields */
+.form-input, .form-select {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0.625rem 0.875rem;
+  background: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus {
+  outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.form-input.has-error {
+  border-color: var(--danger);
+  background-color: var(--danger-bg);
+}
+
+.form-input.has-error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+}
+
+/* Card Container */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: clamp(1rem, 0.8rem + 1vw, 1.75rem);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Subtle Pulsing Animation for Status Badge */
+@keyframes status-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.pulse-dot {
+  animation: status-pulse 2s infinite ease-in-out;
+}
+
+/* Spinning Animation for Loading */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+/* Typing Bubbles Animation */
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  display: inline-block;
+  animation: typing-bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(3) { animation-delay: 0s; }
+
+/* Scrollbar refinement */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
