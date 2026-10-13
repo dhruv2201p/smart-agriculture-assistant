@@ -19,6 +19,19 @@ export async function checkHealth() {
 }
 
 /**
+ * Diagnostic health check for disease detection subsystem
+ */
+export async function checkDiseaseHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/api/disease/health`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    return { status: 'error', message: err.message }
+  }
+}
+
+/**
  * Predict optimal crop from soil & weather parameters
  */
 export async function predictCrop(data) {

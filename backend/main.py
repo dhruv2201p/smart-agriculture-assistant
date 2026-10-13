@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from crop import predict_crop
-from disease import predict_disease, get_supported_crops
+from disease import predict_disease, get_supported_crops, get_disease_health
 from chatbot import get_chat_response
 
 app = FastAPI(
@@ -86,12 +86,19 @@ def root():
 
 @app.get("/health")
 def health_check():
-    """Service health check."""
+    """Service health check including disease subsystem state."""
     return {
         "status": "ok",
         "service": "Smart Agriculture Assistant API",
-        "gemini_configured": bool(os.getenv("GEMINI_API_KEY"))
+        "gemini_configured": bool(os.getenv("GEMINI_API_KEY")),
+        "disease_module": get_disease_health()
     }
+
+
+@app.get("/api/disease/health")
+def disease_health_endpoint():
+    """Dedicated diagnostic health check for plant disease detection subsystem."""
+    return {"status": "ok", "data": get_disease_health()}
 
 
 @app.post("/api/crop/predict")
@@ -127,25 +134,42 @@ async def predict_disease_endpoint(
 ):
     """
     Predict plant disease from uploaded leaf image and crop name.
+    Includes upload validation, top-3 candidates, and treatment advice.
     """
-    # Validate content type
+    # 1. Validate content type
     allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
     if file.content_type and file.content_type.lower() not in allowed_types:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid image type '{file.content_type}'. Supported: JPEG, PNG, WEBP."
+            detail=f"Invalid image format '{file.content_type}'. Please upload a JPG, PNG, or WEBP photo."
         )
 
     try:
         image_bytes = await file.read()
+        if not image_bytes or len(image_bytes) == 0:
+            raise HTTPException(status_code=400, detail="Uploaded image is empty (0 bytes). Please select a valid photo.")
+
         result = predict_disease(image_bytes=image_bytes, crop_key=crop_name)
         return {"success": True, "data": result}
+    except HTTPException:
+        raise
     except ValueError as ve:
+        # User input or validation error
         raise HTTPException(status_code=400, detail=str(ve))
     except FileNotFoundError as fe:
-        raise HTTPException(status_code=503, detail=str(fe))
+        # Model file not found on disk or failed download
+        raise HTTPException(
+            status_code=503,
+            detail=f"The deep learning model weights for '{crop_name}' are currently unavailable. Please try again shortly."
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Disease prediction failed: {str(e)}")
+        # Log internal error and return sanitized message
+        import logging
+        logging.getLogger("uvicorn.error").error(f"Disease prediction error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred while analyzing the leaf image. Please ensure the image is clear and try again."
+        )
 
 
 @app.post("/api/chat")

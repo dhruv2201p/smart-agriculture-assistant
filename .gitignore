@@ -38,3 +38,5 @@ catboost_info/
 Thumbs.db
 desktop.ini
 *.log
+*.bak
+

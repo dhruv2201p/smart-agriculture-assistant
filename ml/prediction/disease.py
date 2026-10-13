@@ -1,115 +1,77 @@
-# ============================================================
-# Smart Agriculture Assistant
-# Plant Disease Detection - Prediction
-# ============================================================
-
-# ------------------------------------------------------------
-# Import required libraries
-# ------------------------------------------------------------
+"""
+Plant Disease Detection - Offline CLI Prediction Tool
+=====================================================
+Performs disease diagnosis on a local plant leaf image using trained ResNet50 models.
+Applies exact training preprocessing (RGB conversion, 224x224 resize, /255.0 normalization).
+"""
 
 import os
 import pickle
+from pathlib import Path
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-
-# Import the same ResNet50 preprocessing function
-# used when the disease models were trained.
 from tensorflow.keras.applications.resnet50 import preprocess_input
 
-
 # ------------------------------------------------------------
-# Project paths
+# Project paths (dynamic resolution)
 # ------------------------------------------------------------
-
-PROJECT_ROOT = r"D:\projects\Smart_Agriculture_Assistant"
-
-MODEL_DIR = os.path.join(
-    PROJECT_ROOT,
-    "models",
-    "disease"
-)
-
-ENCODER_DIR = os.path.join(
-    PROJECT_ROOT,
-    "models",
-    "disease_label_encoders"
-)
-
-
-# ------------------------------------------------------------
-# Image configuration
-# ------------------------------------------------------------
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MODEL_DIR = os.path.join(PROJECT_ROOT, "backend", "models", "disease")
+ENCODER_DIR = os.path.join(PROJECT_ROOT, "backend", "models", "disease_label_encoders")
 
 IMAGE_SIZE = (224, 224)
-
-
-# ------------------------------------------------------------
-# Dataset-specific model and label encoder mapping
-# ------------------------------------------------------------
+CONFIDENCE_THRESHOLD = 0.60
 
 DATASET_CONFIG = {
-
     "apple": {
         "model": "apple_resnet50_finetuned.keras",
         "encoder": "apple_label_encoder.pkl"
     },
-
     "black_gram_leaf": {
         "model": "black_gram_leaf_resnet50_finetuned.keras",
         "encoder": "Black_Gram_Leaf_label_encoder.pkl"
     },
-
     "coconut": {
         "model": "coconut_resnet50_finetuned.keras",
         "encoder": "Coconut_label_encoder.pkl"
     },
-
     "coffee": {
         "model": "coffee_resnet50_finetuned.keras",
         "encoder": "coffee_label_encoder.pkl"
     },
-
     "grapes": {
         "model": "grapes_resnet50_finetuned.keras",
         "encoder": "grapes_label_encoder.pkl"
     },
-
     "jute": {
         "model": "jute_resnet50_finetuned.keras",
         "encoder": "jute_label_encoder.pkl"
     },
-
     "maize": {
         "model": "maize_resnet50_finetuned.keras",
         "encoder": "maize_label_encoder.pkl"
     },
-
     "mango": {
         "model": "mango_resnet50_finetuned_best.keras",
         "encoder": "mango_label_encoder.pkl"
     },
-
     "orange": {
         "model": "orange_resnet50_finetuned.keras",
         "encoder": "orange_label_encoder.pkl"
     },
-
     "pigonpea": {
         "model": "pigonpea_resnet50_finetuned.keras",
         "encoder": "pigonpea_label_encoder.pkl"
     },
-
     "plant_wild": {
         "model": "plant_wild_resnet50_finetuned.keras",
         "encoder": "plant_wild_label_encoder.pkl"
     },
-
     "rice": {
         "model": "rice_resnet50_finetuned.keras",
         "encoder": "rice_label_encoder.pkl"
     },
-
     "watermelon": {
         "model": "watermelon_resnet50_finetuned.keras",
         "encoder": "Watermelon_label_encoder.pkl"
@@ -117,183 +79,83 @@ DATASET_CONFIG = {
 }
 
 
-# ------------------------------------------------------------
-# Load image
-# ------------------------------------------------------------
+def run_prediction():
+    image_path = input("\nEnter the path of the plant leaf image: ").strip().strip('"')
 
-image_path = input(
-    "\nEnter the path of the plant leaf image: "
-).strip().strip('"')
+    if not os.path.isfile(image_path):
+        print(f"\nError: Image file not found: {image_path}")
+        return
 
+    print("\nAvailable plant datasets:")
+    for dataset in DATASET_CONFIG:
+        print(f" - {dataset}")
 
-# ------------------------------------------------------------
-# Check image path
-# ------------------------------------------------------------
+    dataset_name = input("\nEnter the dataset/plant name: ").strip().lower()
+    if dataset_name not in DATASET_CONFIG:
+        print(f"\nError: Unsupported dataset '{dataset_name}'.")
+        return
 
-if not os.path.isfile(image_path):
+    model_path = os.path.join(MODEL_DIR, DATASET_CONFIG[dataset_name]["model"])
+    encoder_path = os.path.join(ENCODER_DIR, DATASET_CONFIG[dataset_name]["encoder"])
 
-    print("\nError: Image file not found.")
-    print("Please check the image path.")
+    if not os.path.isfile(model_path):
+        print(f"\nError: Model file not found at {model_path}")
+        return
 
-    raise SystemExit
+    if not os.path.isfile(encoder_path):
+        print(f"\nError: Label encoder not found at {encoder_path}")
+        return
 
+    print("\nLoading ResNet50 model...")
+    model = keras.models.load_model(
+        model_path,
+        compile=False,
+        safe_mode=False,
+        custom_objects={"preprocess_input": preprocess_input}
+    )
 
-# ------------------------------------------------------------
-# Display available datasets
-# ------------------------------------------------------------
+    print("Loading label encoder...")
+    with open(encoder_path, "rb") as file:
+        label_encoder = pickle.load(file)
 
-print("\nAvailable plant datasets:")
+    # Load and preprocess image matching training
+    image = tf.keras.utils.load_img(image_path, target_size=IMAGE_SIZE)
+    image = tf.keras.utils.img_to_array(image)
 
-for dataset in DATASET_CONFIG:
-    print(f" - {dataset}")
+    # CRUCIAL: Normalize to [0, 1] range by dividing by 255.0.
+    # The model has internal `layers.Rescaling(scale=255.0)` before ResNet50 preprocessing.
+    image = image.astype(np.float32) / 255.0
+    image = np.expand_dims(image, axis=0)
 
+    print("Running disease inference...")
+    raw_predictions = model.predict(image, verbose=0)[0]
 
-# ------------------------------------------------------------
-# Select dataset
-# ------------------------------------------------------------
+    # Top-3 predictions
+    classes = label_encoder.classes_
+    top_indices = np.argsort(raw_predictions)[::-1][:min(3, len(classes))]
 
-dataset_name = input(
-    "\nEnter the dataset/plant name: "
-).strip().lower()
+    print("\n" + "=" * 55)
+    print("           PLANT DISEASE PREDICTION RESULT")
+    print("=" * 55)
+    print(f"Plant Species : {dataset_name.replace('_', ' ').title()}")
 
+    best_idx = top_indices[0]
+    best_conf = float(raw_predictions[best_idx])
+    best_class = str(classes[best_idx])
 
-# ------------------------------------------------------------
-# Validate dataset
-# ------------------------------------------------------------
+    if best_conf < CONFIDENCE_THRESHOLD:
+        print(f"Diagnosis     : Uncertain - please upload a clearer leaf image")
+        print(f"Status        : Top prediction confidence ({best_conf*100:.1f}%) < {CONFIDENCE_THRESHOLD*100:.0f}% threshold")
+    else:
+        print(f"Diagnosis     : {best_class}")
+        print(f"Confidence    : {best_conf * 100:.2f}%")
 
-if dataset_name not in DATASET_CONFIG:
+    print("\nTop Candidate Predictions:")
+    for rank, idx in enumerate(top_indices, 1):
+        print(f" {rank}. {classes[idx]:<30} {raw_predictions[idx]*100:>6.2f}%")
 
-    print("\nError: Invalid dataset name.")
-
-    raise SystemExit
-
-
-# ------------------------------------------------------------
-# Get model and encoder filenames
-# ------------------------------------------------------------
-
-model_path = os.path.join(
-    MODEL_DIR,
-    DATASET_CONFIG[dataset_name]["model"]
-)
-
-encoder_path = os.path.join(
-    ENCODER_DIR,
-    DATASET_CONFIG[dataset_name]["encoder"]
-)
-
-
-# ------------------------------------------------------------
-# Check model and encoder
-# ------------------------------------------------------------
-
-if not os.path.isfile(model_path):
-
-    print("\nError: Model file not found:")
-    print(model_path)
-
-    raise SystemExit
-
-
-if not os.path.isfile(encoder_path):
-
-    print("\nError: Label encoder not found:")
-    print(encoder_path)
-
-    raise SystemExit
+    print("=" * 55 + "\n")
 
 
-# ------------------------------------------------------------
-# Load trained ResNet50 model
-# ------------------------------------------------------------
-
-print("\nLoading ResNet50 model...")
-
-model = keras.models.load_model(
-    model_path,
-    compile=False,
-    safe_mode=False,
-     custom_objects={
-        "preprocess_input": preprocess_input
-    }
-)
-
-
-# ------------------------------------------------------------
-# Load dataset-specific label encoder
-# ------------------------------------------------------------
-
-print("Loading label encoder...")
-
-with open(encoder_path, "rb") as file:
-
-    label_encoder = pickle.load(file)
-
-
-# ------------------------------------------------------------
-# Load and preprocess image
-# ------------------------------------------------------------
-
-image = tf.keras.utils.load_img(
-    image_path,
-    target_size=IMAGE_SIZE
-)
-
-image = tf.keras.utils.img_to_array(image)
-
-# Keep pixel values in the 0-255 range.
-# The trained model already contains ResNet50 preprocessing.
-image = image.astype(np.float32)
-
-# Add batch dimension.
-image = np.expand_dims(image, axis=0)
-
-
-# ------------------------------------------------------------
-# Make prediction
-# ------------------------------------------------------------
-
-print("Predicting disease...")
-
-predictions = model.predict(
-    image,
-    verbose=0
-)
-
-
-# ------------------------------------------------------------
-# Get predicted class
-# ------------------------------------------------------------
-
-predicted_index = np.argmax(
-    predictions[0]
-)
-
-
-predicted_class = label_encoder.inverse_transform(
-    [predicted_index]
-)[0]
-
-
-# ------------------------------------------------------------
-# Get prediction confidence
-# ------------------------------------------------------------
-
-confidence = float(
-    predictions[0][predicted_index]
-) * 100
-
-
-# ------------------------------------------------------------
-# Display result
-# ------------------------------------------------------------
-
-print("\n" + "=" * 50)
-print("        PLANT DISEASE PREDICTION")
-print("=" * 50)
-
-print(f"Plant/Dataset : {dataset_name}")
-print(f"Prediction    : {predicted_class}")
-print(f"Confidence    : {confidence:.2f}%")
-
-print("=" * 50)
+if __name__ == "__main__":
+    run_prediction()

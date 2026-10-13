@@ -1,5 +1,6 @@
 fastapi>=0.110.0
 uvicorn[standard]>=0.28.0
+gunicorn>=21.2.0; sys_platform != "win32"
 python-multipart>=0.0.9
 pydantic>=2.7.0
 python-dotenv>=1.0.0
