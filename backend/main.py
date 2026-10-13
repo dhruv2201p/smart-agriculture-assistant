@@ -73,6 +73,17 @@ class ChatRequest(BaseModel):
 # -------------------------------------------------------------
 # Endpoints
 # -------------------------------------------------------------
+@app.get("/")
+def root():
+    """Root endpoint for Render default health checks and quick status."""
+    return {
+        "status": "ok",
+        "service": "Smart Agriculture Assistant API",
+        "health": "/health",
+        "docs": "/docs"
+    }
+
+
 @app.get("/health")
 def health_check():
     """Service health check."""

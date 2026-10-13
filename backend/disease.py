@@ -20,9 +20,6 @@ from PIL import Image
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.applications.resnet50 import preprocess_input
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "models", "disease")
@@ -220,6 +217,11 @@ def load_crop_disease_model(crop_key: str):
     # Return cached model if already loaded
     if _current_crop == crop_key and _current_model is not None:
         return _current_model, _current_encoder
+
+    # Lazy load TensorFlow & Keras on first prediction to minimize RAM and enable instant startup
+    import tensorflow as tf
+    from tensorflow import keras
+    from tensorflow.keras.applications.resnet50 import preprocess_input
 
     # Evict old model from GPU/RAM to stay within Render 512MB RAM limit
     if _current_model is not None:
