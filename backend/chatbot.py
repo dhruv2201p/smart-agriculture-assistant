@@ -83,7 +83,8 @@ def get_chat_response(
     if not GENAI_AVAILABLE:
         return "⚠️ Google GenAI library is not installed on the server."
 
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    raw_key = os.getenv("GEMINI_API_KEY", "")
+    api_key = "".join(raw_key.split()) if raw_key else ""
     if not api_key or api_key == "your_gemini_api_key_here":
         return "⚠️ Gemini API key is missing. Please configure GEMINI_API_KEY in your environment."
 

@@ -139,8 +139,14 @@ def download_model_if_missing(model_filename: str, target_path: str):
     cleanup_old_models(keep_filename=model_filename)
 
     os.makedirs(os.path.dirname(target_path), exist_ok=True)
-    hf_repo = os.getenv("HF_REPO_ID") or DEFAULT_HF_REPO
-    base_url = os.getenv("MODEL_BASE_URL")
+    raw_hf = os.getenv("HF_REPO_ID")
+    if raw_hf and raw_hf.strip():
+        hf_repo = "".join(raw_hf.split())
+    else:
+        hf_repo = DEFAULT_HF_REPO
+
+    raw_base = os.getenv("MODEL_BASE_URL")
+    base_url = "".join(raw_base.split()) if raw_base and raw_base.strip() else None
     download_errors = []
 
     # Option 1: Hugging Face Hub library download
