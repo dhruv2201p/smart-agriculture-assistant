@@ -109,45 +109,100 @@ def get_supported_crops() -> list:
     return [{"key": k, "name": v["name"]} for k, v in DATASET_CONFIG.items()]
 
 
+DEFAULT_HF_REPO = "DhruvKatharotiya/smart-agriculture-models"
+
+
+def cleanup_old_models(keep_filename: Optional[str] = None):
+    """
+    Remove previously cached .keras files to stay well within Render's ephemeral disk limit.
+    """
+    try:
+        if os.path.exists(MODEL_DIR):
+            for fname in os.listdir(MODEL_DIR):
+                if fname.endswith(".keras") and fname != keep_filename:
+                    fpath = os.path.join(MODEL_DIR, fname)
+                    try:
+                        os.remove(fpath)
+                        print(f"Cleaned up cached model from disk: {fname}")
+                    except Exception:
+                        pass
+    except Exception as e:
+        print(f"Warning during model cleanup: {e}")
+
+
 def download_model_if_missing(model_filename: str, target_path: str):
     """
-    Download .keras model file on demand from Hugging Face Hub or MODEL_BASE_URL
-    if it is not present on disk.
+    Download .keras model file on demand from Hugging Face Hub or direct CDN/MODEL_BASE_URL
+    if it is not present on disk. Automatically falls back to public repository.
     """
-    if os.path.isfile(target_path):
+    if os.path.isfile(target_path) and os.path.getsize(target_path) > 10 * 1024 * 1024:
         return target_path
 
-    os.makedirs(os.path.dirname(target_path), exist_ok=True)
-    hf_repo = os.getenv("HF_REPO_ID")
-    base_url = os.getenv("MODEL_BASE_URL")
+    # Free up disk space from previous crops before downloading the new model
+    cleanup_old_models(keep_filename=model_filename)
 
-    # Option 1: Hugging Face Hub
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+    hf_repo = os.getenv("HF_REPO_ID") or DEFAULT_HF_REPO
+    base_url = os.getenv("MODEL_BASE_URL")
+    download_errors = []
+
+    # Option 1: Hugging Face Hub library download
     if hf_repo:
         try:
             from huggingface_hub import hf_hub_download
-            print(f"Downloading {model_filename} from Hugging Face repo {hf_repo}...")
+            print(f"Downloading {model_filename} from Hugging Face repo '{hf_repo}'...")
             downloaded = hf_hub_download(
                 repo_id=hf_repo,
                 filename=f"disease/{model_filename}",
                 local_dir=os.path.join(BASE_DIR, "models")
             )
-            return downloaded
+            if os.path.isfile(downloaded) and os.path.getsize(downloaded) > 10 * 1024 * 1024:
+                return downloaded
         except Exception as e:
-            print(f"Hugging Face download failed: {e}")
+            print(f"Hugging Face Hub download failed: {e}")
+            download_errors.append(f"HF Hub: {e}")
 
-    # Option 2: Direct public URL
+    # Option 2: Direct CDN streaming via urllib (works with zero dependencies & direct CDN redirects)
+    candidate_urls = []
     if base_url:
-        try:
-            download_url = f"{base_url.rstrip('/')}/{model_filename}"
-            print(f"Downloading {model_filename} from {download_url}...")
-            urllib.request.urlretrieve(download_url, target_path)
-            return target_path
-        except Exception as e:
-            print(f"Direct URL download failed: {e}")
+        candidate_urls.append(f"{base_url.rstrip('/')}/{model_filename}")
+    if hf_repo:
+        candidate_urls.append(f"https://huggingface.co/{hf_repo}/resolve/main/disease/{model_filename}")
 
+    for url in candidate_urls:
+        tmp_path = f"{target_path}.tmp"
+        try:
+            print(f"Streaming {model_filename} directly from {url}...")
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=180) as response, open(tmp_path, "wb") as out_file:
+                chunk_size = 1024 * 1024  # 1MB chunks
+                while True:
+                    chunk = response.read(chunk_size)
+                    if not chunk:
+                        break
+                    out_file.write(chunk)
+
+            if os.path.isfile(tmp_path) and os.path.getsize(tmp_path) > 10 * 1024 * 1024:
+                os.replace(tmp_path, target_path)
+                print(f"Successfully downloaded {model_filename} ({os.path.getsize(target_path) / (1024*1024):.1f} MB) to {target_path}")
+                return target_path
+            else:
+                if os.path.isfile(tmp_path):
+                    os.remove(tmp_path)
+                raise ValueError(f"Downloaded file too small or corrupted (< 10MB) from {url}")
+        except Exception as e:
+            if os.path.isfile(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+            print(f"Direct stream failed ({url}): {e}")
+            download_errors.append(f"Direct URL: {e}")
+
+    error_summary = "; ".join(download_errors) if download_errors else "No download sources available"
     raise FileNotFoundError(
-        f"Model file '{model_filename}' not found locally at {target_path}. "
-        "Please provide local models or configure HF_REPO_ID or MODEL_BASE_URL in your environment."
+        f"Model file '{model_filename}' could not be downloaded to {target_path}. "
+        f"Details: {error_summary}"
     )
 
 

@@ -14,6 +14,6 @@ services:
       - key: CORS_ORIGINS
         value: "*"
       - key: HF_REPO_ID
-        sync: false
+        value: DhruvKatharotiya/smart-agriculture-models
       - key: MODEL_BASE_URL
         sync: false
