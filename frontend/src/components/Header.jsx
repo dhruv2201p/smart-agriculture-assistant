@@ -5,6 +5,8 @@ export default function Header({
   activeTab,
   setActiveTab,
   backendStatus,
+  backendDetails,
+  onRetryBackend,
   hasPredictionContext
 }) {
   const [showTooltip, setShowTooltip] = useState(false)
@@ -95,12 +97,14 @@ export default function Header({
         </div>
 
         {/* Backend Status Badge with Popover Warning */}
-        <div style={{ position: 'relative' }}>
+        <div
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
           <button
             type="button"
             onClick={() => setShowTooltip(!showTooltip)}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
             aria-label="Server connection status details"
             style={{
               display: 'inline-flex',
@@ -137,8 +141,8 @@ export default function Header({
               top: 'calc(100% + 6px)',
               right: 0,
               zIndex: 100,
-              width: '260px',
-              padding: '0.75rem',
+              width: '280px',
+              padding: '0.85rem',
               borderRadius: 'var(--radius-md)',
               background: 'var(--surface-card)',
               color: 'var(--text-secondary)',
@@ -148,14 +152,64 @@ export default function Header({
               lineHeight: 1.45,
               animation: 'fadeIn 0.2s ease'
             }}>
-              <p style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
-                Server Status: {status.label}
-              </p>
-              <p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <p style={{ fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
+                  Server Status: {status.label}
+                </p>
+                {onRetryBackend && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onRetryBackend()
+                    }}
+                    style={{
+                      border: '1px solid var(--border-medium)',
+                      background: 'var(--surface-subtle)',
+                      color: 'var(--primary)',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-sm)'
+                    }}
+                  >
+                    🔄 Retry
+                  </button>
+                )}
+              </div>
+
+              {backendDetails?.endpoint && (
+                <p style={{ margin: '0 0 6px 0', wordBreak: 'break-all' }}>
+                  <strong style={{ color: 'var(--text-main)' }}>API Target:</strong>{' '}
+                  <code style={{ fontSize: '11px', background: 'var(--surface-subtle)', padding: '2px 4px', borderRadius: '4px' }}>
+                    {backendDetails.endpoint}
+                  </code>
+                </p>
+              )}
+
+              <p style={{ margin: 0 }}>
                 {backendStatus === 'online'
                   ? 'FastAPI neural backend is active and responding.'
-                  : 'Notice: If hosted on a free cloud tier (Render), the backend spins down after inactivity and may take ~50 seconds to wake up.'}
+                  : backendStatus === 'checking'
+                  ? 'Connecting to server / waking up container...'
+                  : 'Free tier instances sleep after 15 min of inactivity and take ~45–60s to wake up.'}
               </p>
+
+              {typeof window !== 'undefined' && window.location.protocol === 'https:' && backendDetails?.endpoint?.startsWith('http://localhost') && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '6px 8px',
+                  background: 'var(--danger-bg)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--danger-border)',
+                  color: 'var(--danger)',
+                  fontSize: '11px',
+                  lineHeight: 1.35
+                }}>
+                  ⚠️ <strong>Action needed:</strong> App is on HTTPS but API is pointing to localhost. Add <code>VITE_API_URL</code> in Vercel settings and redeploy.
+                </div>
+              )}
             </div>
           )}
         </div>

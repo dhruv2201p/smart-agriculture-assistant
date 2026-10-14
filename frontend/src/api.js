@@ -3,18 +3,22 @@
  * Reads base URL from VITE_API_URL environment variable.
  */
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+export const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
 
 /**
  * Health check
  */
 export async function checkHealth() {
   try {
-    const res = await fetch(`${API_BASE}/health`)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 12000)
+    const res = await fetch(`${API_BASE}/health`, { signal: controller.signal })
+    clearTimeout(timeoutId)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return await res.json()
+    const json = await res.json()
+    return { ...json, endpoint: API_BASE }
   } catch (err) {
-    return { status: 'error', message: err.message }
+    return { status: 'error', message: err.message || 'Connection failed', endpoint: API_BASE }
   }
 }
 

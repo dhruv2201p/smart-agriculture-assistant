@@ -9,25 +9,30 @@ import ChatTab from './components/ChatTab'
 export default function App() {
   const [activeTab, setActiveTab] = useState('crop') // 'crop' | 'disease' | 'chat'
   const [backendStatus, setBackendStatus] = useState('checking') // 'online' | 'offline' | 'checking'
+  const [backendDetails, setBackendDetails] = useState(null)
   const [predictionContext, setPredictionContext] = useState(null)
+
+  const verifyBackend = async () => {
+    setBackendStatus('checking')
+    try {
+      const res = await checkHealth()
+      setBackendDetails(res)
+      setBackendStatus(res.status === 'ok' ? 'online' : 'offline')
+    } catch (err) {
+      setBackendDetails({ status: 'error', message: err.message })
+      setBackendStatus('offline')
+    }
+  }
 
   // Verify backend health on mount and periodically
   useEffect(() => {
     let isMounted = true
 
-    const verifyBackend = async () => {
-      try {
-        const res = await checkHealth()
-        if (isMounted) {
-          setBackendStatus(res.status === 'ok' ? 'online' : 'offline')
-        }
-      } catch {
-        if (isMounted) setBackendStatus('offline')
-      }
-    }
-
     verifyBackend()
-    const interval = setInterval(verifyBackend, 25000)
+    const interval = setInterval(() => {
+      if (isMounted) verifyBackend()
+    }, 25000)
+
     return () => {
       isMounted = false
       clearInterval(interval)
@@ -62,6 +67,8 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         backendStatus={backendStatus}
+        backendDetails={backendDetails}
+        onRetryBackend={verifyBackend}
         hasPredictionContext={Boolean(predictionContext)}
       />
 
